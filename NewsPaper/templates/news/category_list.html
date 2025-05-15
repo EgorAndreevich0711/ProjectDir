@@ -1,0 +1,77 @@
+{% extends 'flatpages/default.html' %}
+{% load custom_filters %}
+{% load cache %}
+
+{% block title %}Новости{% endblock %}
+
+{% cache 300 news_list_page request.path request.GET.page %}
+{% block content %}
+<div class="container">
+    {% cache 300 news_list_header %}
+    <div class="header">
+        <h1>Все новости</h1>
+        <p class="count">Всего новостей: {{ paginator.count }}</p>
+        <hr>
+        <div class="current-date">{{ time_now|date:'d M Y' }}</div>
+        <div class="next-post">{{ next_post|default_if_none:"Чуть позже будут новости!" }}</div>
+    </div>
+    {% endcache %}
+
+    {% cache 300 news_list_table %}
+    <div class="news-table">
+        {% if category_news_list %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Заголовок</th>
+                        <th>Дата</th>
+                        <th>Текст</th>
+                        <th>Категория</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for post in category_news_list %}
+                    <tr>
+                        <td>{{ post.title|censor }}</td>
+                        <td>{{ post.dateCreation|date:'d M y' }}</td>
+                        <td>{{ post.text|censor|truncatechars:20 }}</td>
+                        <td>
+                            {% for category in post.postCategory.all %}
+                                <a href="{% url 'news:category_list' category.id %}">{{ category }}</a>
+                                <a href="{% url 'news:subscribe' category.id %}" class="btn btn-sm btn-secondary">Подписаться</a>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="no-news">Новостей нет!</div>
+        {% endif %}
+    </div>
+    {% endcache %}
+
+    {% cache 300 pagination request.GET.page %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a href="?page=1" class="page-link">1</a>
+            {% if page_obj.previous_page_number != 1 %}
+                <span class="ellipsis">...</span>
+                <a href="?page={{ page_obj.previous_page_number }}" class="page-link">{{ page_obj.previous_page_number }}</a>
+            {% endif %}
+        {% endif %}
+
+        <span class="current-page">{{ page_obj.number }}</span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="page-link">{{ page_obj.next_page_number }}</a>
+            {% if paginator.num_pages != page_obj.next_page_number %}
+                <span class="ellipsis">...</span>
+                <a href="?page={{ page_obj.paginator.num_pages }}" class="page-link">{{ page_obj.paginator.num_pages }}</a>
+            {% endif %}
+        {% endif %}
+    </div>
+    {% endcache %}
+</div>
+{% endblock %}
+{% endcache %}
